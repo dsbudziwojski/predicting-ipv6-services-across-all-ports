@@ -1,0 +1,30 @@
+import numpy as np
+import pandas as pd
+from utilities.plotting import plot_conditional_pairs
+
+df8 = pd.read_csv('../data/raw/v6-conditional-probs-port-only-conditional.csv')
+df8 = df8.sort_values('count_joint', ascending=False)
+port_a = [161, 631, 6379,23,5900,5672,3005,4567,5432,1883,20000,1723,6443,80,110]
+port_b = [443]
+df8 = df8[df8['port_b'].isin(port_b)]
+df8 = df8[df8['port_a'].isin(port_a)]
+
+port_a_list = [161, 631, 6379, 23, 5900, 5672, 3005, 4567, 5432, 1883, 20000, 1723, 6443, 80, 110]
+port_b = 443
+
+all_pairs = pd.DataFrame({
+    'port_b': [port_b] * len(port_a_list),
+    'port_a': port_a_list
+})
+
+df8_full = all_pairs.merge(
+    df8[['port_b','port_a','count_condition','count_joint','probability']],
+    on=['port_b','port_a'],
+    how='left'
+)
+
+df8_full['count_joint']     = df8_full['count_joint'].fillna(0).astype(int)
+df8_full['probability']     = df8_full['probability'].fillna(0.0)
+df8_full['count_condition'] = df8_full['count_condition'].fillna(method='ffill')
+
+plot_conditional_pairs(df8_full,["port_b"], top_n=None, title="IPv6 P(port a | port b) for IPv4’s Top-15", x_tick=True, sav_location="../figures/figure-3b-ipv6-plots-ipv4-top-15")
